@@ -153,6 +153,32 @@ elif page == "Model Training":
                 df = pd.read_csv(uploaded_file)
                 st.success("File uploaded successfully!")
                 
+                # Data validation and cleaning
+                st.subheader("Data Validation:")
+                
+                # Check for missing values
+                missing_values = df.isnull().sum()
+                if missing_values.sum() > 0:
+                    st.warning(f"Found missing values in dataset:")
+                    st.write(missing_values[missing_values > 0])
+                    
+                    # Option to handle missing values
+                    handle_missing = st.selectbox("How to handle missing values?", 
+                                                ["Drop rows with missing values", "Fill with mean/median/mode"])
+                    
+                    if handle_missing == "Drop rows with missing values":
+                        df_clean = df.dropna()
+                        st.info(f"Dropped {len(df) - len(df_clean)} rows with missing values")
+                        df = df_clean
+                    else:
+                        # Fill missing values
+                        for col in df.columns:
+                            if df[col].dtype in ['int64', 'float64']:
+                                df[col].fillna(df[col].mean(), inplace=True)
+                            else:
+                                df[col].fillna(df[col].mode()[0] if not df[col].mode().empty else 'Unknown', inplace=True)
+                        st.info("Filled missing values with mean/median/mode")
+                
                 # Display dataset info
                 st.subheader("Dataset Information:")
                 st.write(f"Shape: {df.shape}")
@@ -160,6 +186,18 @@ elif page == "Model Training":
                 
                 # Target column selection
                 target_column = st.selectbox("Select target column:", df.columns)
+                
+                # Validate target column
+                if df[target_column].isnull().any():
+                    st.error(f"Target column '{target_column}' contains NaN values. Please clean the data first.")
+                    st.stop()
+                
+                # Check if dataset meets requirements
+                if df.shape[0] < 500:
+                    st.warning(f"Dataset has only {df.shape[0]} instances (minimum 500 required)")
+                
+                if df.shape[1] < 13:  # target column + 12 features
+                    st.warning(f"Dataset has only {df.shape[1]-1} features (minimum 12 required)")
                 
                 if st.button("Train All Models", type="primary"):
                     with st.spinner("Training all models... This may take a few minutes..."):
@@ -288,6 +326,31 @@ elif page == "Prediction":
             try:
                 pred_df = pd.read_csv(prediction_file)
                 st.success("Prediction data loaded!")
+                
+                # Data validation for prediction
+                missing_values = pred_df.isnull().sum()
+                if missing_values.sum() > 0:
+                    st.warning(f"Found missing values in prediction data:")
+                    st.write(missing_values[missing_values > 0])
+                    
+                    # Option to handle missing values
+                    handle_missing = st.selectbox("How to handle missing values in prediction data?", 
+                                                ["Drop rows with missing values", "Fill with mean/median/mode"],
+                                                key='pred_missing')
+                    
+                    if handle_missing == "Drop rows with missing values":
+                        pred_df_clean = pred_df.dropna()
+                        st.info(f"Dropped {len(pred_df) - len(pred_df_clean)} rows with missing values")
+                        pred_df = pred_df_clean
+                    else:
+                        # Fill missing values
+                        for col in pred_df.columns:
+                            if pred_df[col].dtype in ['int64', 'float64']:
+                                pred_df[col].fillna(pred_df[col].mean(), inplace=True)
+                            else:
+                                pred_df[col].fillna(pred_df[col].mode()[0] if not pred_df[col].mode().empty else 'Unknown', inplace=True)
+                        st.info("Filled missing values with mean/median/mode")
+                
                 st.dataframe(pred_df.head())
                 
                 if st.button("Make Predictions", type="primary"):
