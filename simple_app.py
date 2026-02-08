@@ -104,14 +104,52 @@ class SimpleMLClassifier:
             y_encoded = self.label_encoder.fit_transform(y)
         else:
             y_encoded = y
+        
+        # Check class distribution
+        class_counts = pd.Series(y_encoded).value_counts()
+        min_class_count = class_counts.min()
+        
+        if min_class_count < 2:
+            st.warning(f"Found classes with only {min_class_count} member(s). This may cause issues with train-test splitting.")
+            st.write("Class distribution:")
+            st.write(class_counts)
             
-        # Split the data
-        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42, stratify=y
-        )
-        self.y_train_encoded, self.y_test_encoded = train_test_split(
-            y_encoded, test_size=0.2, random_state=42, stratify=y_encoded
-        )
+            # Option to merge rare classes or use different splitting
+            handle_rare_classes = st.selectbox(
+                "How to handle rare classes?", 
+                ["Use stratified splitting with warning", "Merge rare classes", "Use random splitting"]
+            )
+            
+            if handle_rare_classes == "Merge rare classes":
+                # Find classes with less than 2 members and merge them
+                rare_classes = class_counts[class_counts < 2].index
+                if len(rare_classes) > 0:
+                    st.info(f"Merging {len(rare_classes)} rare classes into nearest common class")
+                    # Find the most common class
+                    most_common = class_counts.idxmax()
+                    # Merge rare classes with most common
+                    y_encoded = np.where(np.isin(y_encoded, rare_classes), most_common, y_encoded)
+                    st.success("Rare classes merged successfully")
+        
+        # Split the data with appropriate strategy
+        try:
+            # Try stratified split first
+            self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
+                X, y, test_size=0.2, random_state=42, stratify=y
+            )
+            self.y_train_encoded, self.y_test_encoded = train_test_split(
+                y_encoded, test_size=0.2, random_state=42, stratify=y_encoded
+            )
+        except ValueError as e:
+            st.warning(f"Stratified splitting failed: {str(e)}")
+            st.info("Using random splitting instead...")
+            # Fall back to random split
+            self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
+                X, y, test_size=0.2, random_state=42
+            )
+            self.y_train_encoded, self.y_test_encoded = train_test_split(
+                y_encoded, test_size=0.2, random_state=42
+            )
         
         # Scale features
         self.X_train_scaled = self.scaler.fit_transform(self.X_train)

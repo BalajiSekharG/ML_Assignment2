@@ -49,14 +49,45 @@ class MLClassifier:
             y_encoded = self.label_encoder.fit_transform(y)
         else:
             y_encoded = y
+        
+        # Check class distribution
+        class_counts = pd.Series(y_encoded).value_counts()
+        min_class_count = class_counts.min()
+        
+        if min_class_count < 2:
+            print(f"Warning: Found classes with only {min_class_count} member(s).")
+            print("Class distribution:")
+            print(class_counts)
             
-        # Split the data
-        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42, stratify=y
-        )
-        self.y_train_encoded, self.y_test_encoded = train_test_split(
-            y_encoded, test_size=0.2, random_state=42, stratify=y_encoded
-        )
+            # Find classes with less than 2 members and merge them
+            rare_classes = class_counts[class_counts < 2].index
+            if len(rare_classes) > 0:
+                print(f"Merging {len(rare_classes)} rare classes into nearest common class")
+                # Find the most common class
+                most_common = class_counts.idxmax()
+                # Merge rare classes with most common
+                y_encoded = np.where(np.isin(y_encoded, rare_classes), most_common, y_encoded)
+                print("Rare classes merged successfully")
+        
+        # Split the data with appropriate strategy
+        try:
+            # Try stratified split first
+            self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
+                X, y, test_size=0.2, random_state=42, stratify=y
+            )
+            self.y_train_encoded, self.y_test_encoded = train_test_split(
+                y_encoded, test_size=0.2, random_state=42, stratify=y_encoded
+            )
+        except ValueError as e:
+            print(f"Stratified splitting failed: {str(e)}")
+            print("Using random splitting instead...")
+            # Fall back to random split
+            self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
+                X, y, test_size=0.2, random_state=42
+            )
+            self.y_train_encoded, self.y_test_encoded = train_test_split(
+                y_encoded, test_size=0.2, random_state=42
+            )
         
         # Scale features
         self.X_train_scaled = self.scaler.fit_transform(self.X_train)
