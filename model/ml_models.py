@@ -213,6 +213,16 @@ class MLClassifier:
         
         model = self.results[model_name]['model']
         
+        # Validate new data structure
+        training_features = self.X_train.shape[1]
+        if hasattr(new_data, 'columns'):
+            prediction_features = new_data.shape[1]
+        else:
+            prediction_features = new_data.shape[1]
+        
+        if prediction_features != training_features:
+            raise ValueError(f"Feature mismatch! Training data has {training_features} features, but prediction data has {prediction_features} features.")
+        
         # Preprocess new data
         if model_name in ['Logistic Regression', 'K-Nearest Neighbor']:
             new_data_scaled = self.scaler.transform(new_data)

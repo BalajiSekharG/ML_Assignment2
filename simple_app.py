@@ -569,11 +569,38 @@ elif page == "Prediction":
                 
                 if st.button("Make Predictions", type="primary"):
                     with st.spinner("Making predictions..."):
-                        # Remove target column if present (assuming it's the last column from training)
+                        # Remove target column if present
                         if st.session_state.dataset_info['target_column'] in pred_df.columns:
                             pred_data = pred_df.drop(columns=[st.session_state.dataset_info['target_column']])
                         else:
                             pred_data = pred_df
+                        
+                        # Validate prediction data structure
+                        training_features = classifier.X_train.shape[1]
+                        prediction_features = pred_data.shape[1]
+                        
+                        if prediction_features != training_features:
+                            st.error(f"Feature mismatch! Training data has {training_features} features, but prediction data has {prediction_features} features.")
+                            st.write("Training features:", list(classifier.X_train.columns))
+                            st.write("Prediction features:", list(pred_data.columns))
+                            st.stop()
+                        
+                        # Handle categorical variables in prediction data
+                        for col in pred_data.select_dtypes(include=['object']).columns:
+                            if col in classifier.X_train.columns:
+                                pred_data[col] = pd.get_dummies(pred_data[col], prefix=col, drop_first=True)
+                            else:
+                                st.warning(f"Column '{col}' not found in training data. Dropping it.")
+                                pred_data = pred_data.drop(columns=[col])
+                        
+                        # Ensure all training features are present in prediction data
+                        missing_features = set(classifier.X_train.columns) - set(pred_data.columns)
+                        if missing_features:
+                            st.error(f"Missing required features: {missing_features}")
+                            st.stop()
+                        
+                        # Align columns with training data
+                        pred_data = pred_data[classifier.X_train.columns]
                         
                         # Make predictions
                         predictions, probabilities = classifier.predict_new_data(selected_model, pred_data)
