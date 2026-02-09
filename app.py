@@ -715,32 +715,16 @@ elif page == "Prediction":
                             pred_data = pred_df
                         
                         # Final validation
-                        training_features = st.session_state.classifier.X_train.shape[1]
-                        prediction_features = pred_data.shape[1]
-                        
-                        if prediction_features != training_features:
-                            st.error(f"Feature mismatch! Training has {training_features} features, prediction has {prediction_features} features.")
-                            st.stop()
-                        
-                        # Handle categorical variables in prediction data
-                        for col in pred_data.select_dtypes(include=['object']).columns:
-                            if col in st.session_state.classifier.X_train.columns:
-                                pred_data[col] = pd.get_dummies(pred_data[col], prefix=col, drop_first=True)
-                            else:
-                                st.warning(f"Column '{col}' not found in training data. Dropping it.")
-                                pred_data = pred_data.drop(columns=[col])
-                        
-                        # Ensure all training features are present in prediction data
-                        missing_features = set(st.session_state.classifier.X_train.columns) - set(pred_data.columns)
-                        if missing_features:
-                            st.error(f"Missing required features: {missing_features}")
-                            st.stop()
-                        
-                        # Align columns with training data
-                        pred_data = pred_data[st.session_state.classifier.X_train.columns]
-                        
-                        # Make predictions
-                        predictions, probabilities = st.session_state.classifier.predict_new_data(selected_model, pred_data)
+                        if st.session_state.get('classifier') and st.session_state.get('dataset_info'):
+                            training_features = st.session_state.classifier.X_train.shape[1]
+                            prediction_features = pred_data.shape[1]
+                            
+                            if prediction_features != training_features:
+                                st.error(f"Feature mismatch! Training has {training_features} features, prediction has {prediction_features} features.")
+                                st.stop()
+                            
+                            # Make predictions
+                            predictions, probabilities = st.session_state.classifier.predict_new_data(selected_model, pred_data)
                         
                         # Display results
                         st.subheader("🎯 Prediction Results")
