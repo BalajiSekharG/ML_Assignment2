@@ -758,11 +758,7 @@ elif page == "Prediction":
                     st.write(f"Training data has {training_features} features")
                     st.write(f"Prediction data has {prediction_features} features")
                     
-                    if prediction_features != training_features:
-                        st.error(f"⚠️ Feature Mismatch Detected!")
-                        st.write(f"Training features: {list(st.session_state.classifier.X_train.columns)}")
-                        st.write(f"Prediction features: {list(pred_df.columns)}")
-                        st.stop()
+                    # Note: Feature alignment will happen when "Make Predictions" is clicked
                 
                 if st.button("Make Predictions", type="primary"):
                     with st.spinner("Making predictions..."):
