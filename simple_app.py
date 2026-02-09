@@ -401,6 +401,35 @@ elif page == "Model Training":
                 # Target column selection
                 target_column = st.selectbox("Select target column:", df.columns)
                 
+                # Validate target column type
+                target_data = df[target_column]
+                unique_values = target_data.nunique()
+                target_dtype = target_data.dtype
+                
+                st.subheader("🎯 Target Column Analysis")
+                st.write(f"Data type: {target_dtype}")
+                st.write(f"Unique values: {unique_values}")
+                st.write(f"Sample values: {target_data.dropna().head(10).tolist()}")
+                
+                # Check if target is suitable for classification
+                if target_dtype in ['int64', 'float64'] and unique_values > 20:
+                    st.warning("⚠️ Target appears to be continuous (regression problem)")
+                    st.info("This app is designed for classification. Consider:")
+                    st.write("1. Binning continuous values into categories")
+                    st.write("2. Using a different dataset with categorical target")
+                    st.write("3. Converting to discrete classes")
+                    
+                    # Option to bin continuous values
+                    if st.checkbox("Convert continuous target to categories"):
+                        num_bins = st.slider("Number of bins:", min_value=2, max_value=10, value=5)
+                        df[target_column] = pd.cut(target_data, bins=num_bins, labels=False)
+                        st.success(f"Converted target to {num_bins} categories")
+                        st.write("New target distribution:")
+                        st.write(df[target_column].value_counts())
+                
+                elif target_dtype == 'object' or unique_values <= 20:
+                    st.success("✅ Target is suitable for classification")
+                
                 # Validate target column
                 if df[target_column].isnull().any():
                     st.error(f"Target column '{target_column}' contains NaN values. Please clean the data first.")
@@ -524,13 +553,24 @@ elif page == "Prediction":
     st.header("Make Predictions")
     
     if st.session_state.classifier is None:
-        st.warning("No trained models available! Please train models first.")
+        st.warning("⚠️ No trained models available!")
+        st.info("Please go to 'Model Training' page first to train models before making predictions.")
+        st.stop()
     else:
         classifier = st.session_state.classifier
         results = st.session_state.results
         
+        if not results:
+            st.warning("⚠️ No results found!")
+            st.info("Please train models first on the 'Model Training' page.")
+            st.stop()
+        
         # Model selection
+        st.subheader("🎯 Model Selection")
         selected_model = st.selectbox("Select model for prediction:", list(results.keys()))
+        
+        # Display selected model info
+        st.info(f"Selected model: **{selected_model}**")
         
         # Data upload for prediction
         st.subheader("Upload data for prediction:")

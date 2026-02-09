@@ -107,7 +107,7 @@ The dataset is designed to simulate a real-world classification scenario with:
 ### Installation Steps
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/BalajiSekharG/ML_Assignment2.git
 cd ml-classification-comparison
 ```
 
@@ -156,7 +156,7 @@ streamlit run app.py
 ## 🌐 Deployment
 
 The application is deployed on Streamlit Community Cloud and can be accessed at:
-[Live Streamlit App Link](https://your-app-url.streamlit.app)
+[Live Streamlit App Link](https://mlassignment2-2025ab05110.streamlit.app/)
 
 ### Deployment Steps
 1. Push code to GitHub repository
@@ -221,7 +221,7 @@ This project is created for educational purposes as part of the Machine Learning
 ## 📞 Contact
 
 For any queries regarding this project, please contact:
-- Student Name: [Your Name]
+- Student Name: Balaji Sekhar Gudivada
 - Course: Machine Learning
 - Assignment: ML Assignment 2
 
