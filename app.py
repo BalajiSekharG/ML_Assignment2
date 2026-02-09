@@ -781,6 +781,36 @@ elif page == "Prediction":
                                 st.error(f"Feature mismatch! Training has {training_features} features, prediction has {prediction_features} features.")
                                 st.stop()
                             
+                            # Handle categorical variables and align features
+                            # Get training feature names
+                            if hasattr(st.session_state.classifier.X_train, 'columns'):
+                                training_feature_names = list(st.session_state.classifier.X_train.columns)
+                            else:
+                                training_feature_names = [f'feature_{i}' for i in range(training_features)]
+                            
+                            # Handle categorical variables in prediction data
+                            for col in pred_data.select_dtypes(include=['object']).columns:
+                                if col in training_feature_names:
+                                    pred_data[col] = pd.get_dummies(pred_data[col], prefix=col, drop_first=True)
+                                else:
+                                    st.warning(f"Column '{col}' not found in training data. Dropping it.")
+                                    pred_data = pred_data.drop(columns=[col])
+                            
+                            # Remove extra columns not in training data
+                            extra_columns = set(pred_data.columns) - set(training_feature_names)
+                            if extra_columns:
+                                st.warning(f"Removing extra columns not in training data: {extra_columns}")
+                                pred_data = pred_data.drop(columns=extra_columns)
+                            
+                            # Ensure all training features are present in prediction data
+                            missing_features = set(training_feature_names) - set(pred_data.columns)
+                            if missing_features:
+                                st.error(f"Missing required features: {missing_features}")
+                                st.stop()
+                            
+                            # Align columns with training data
+                            pred_data = pred_data[training_feature_names]
+                            
                             # Make predictions
                             predictions, probabilities = st.session_state.classifier.predict_new_data(selected_model, pred_data)
                         
