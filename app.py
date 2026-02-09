@@ -211,7 +211,7 @@ class SimpleMLClassifier:
                 'predictions': y_pred,
                 'confusion_matrix': confusion_matrix(self.y_test_encoded, y_pred),
                 'classification_report': classification_report(self.y_test_encoded, y_pred, 
-                                                             target_names=[str(cls) for cls in self.label_encoder.classes_])
+                                                             target_names=[str(cls) for cls in self.label_encoder.classes_] if hasattr(self.label_encoder, 'classes_') else None)
             }
         
         return self.results
@@ -562,7 +562,7 @@ elif page == "Model Training":
                                     'confusion_matrix': confusion_matrix(classifier.y_test_encoded, y_pred),
                                     'classification_report': classification_report(
                                         classifier.y_test_encoded, y_pred,
-                                        target_names=[str(cls) for cls in classifier.label_encoder.classes_]
+                                        target_names=[str(cls) for cls in classifier.label_encoder.classes_] if hasattr(classifier.label_encoder, 'classes_') else None
                                     )
                                 }
                             }
@@ -782,8 +782,8 @@ elif page == "Prediction":
                         
                         if probabilities is not None:
                             # Add probability columns
-                            prob_df = pd.DataFrame(probabilities, 
-                                                 columns=[f'Prob_{cls}' for cls in st.session_state.classifier.label_encoder.classes_])
+                            class_names = [str(cls) for cls in st.session_state.classifier.label_encoder.classes_] if hasattr(st.session_state.classifier.label_encoder, 'classes_') else [f'Class_{i}' for i in range(probabilities.shape[1])]
+                            prob_df = pd.DataFrame(probabilities, columns=class_names)
                             result_df = pd.concat([result_df, prob_df], axis=1)
                         
                         st.dataframe(result_df)
