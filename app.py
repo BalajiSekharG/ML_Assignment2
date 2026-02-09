@@ -772,21 +772,13 @@ elif page == "Prediction":
                         else:
                             pred_data = pred_df
                         
-                        # Final validation
+                        # Handle feature alignment first
                         if st.session_state.get('classifier') and st.session_state.get('dataset_info'):
-                            training_features = st.session_state.classifier.X_train.shape[1]
-                            prediction_features = pred_data.shape[1]
-                            
-                            if prediction_features != training_features:
-                                st.error(f"Feature mismatch! Training has {training_features} features, prediction has {prediction_features} features.")
-                                st.stop()
-                            
-                            # Handle categorical variables and align features
                             # Get training feature names
                             if hasattr(st.session_state.classifier.X_train, 'columns'):
                                 training_feature_names = list(st.session_state.classifier.X_train.columns)
                             else:
-                                training_feature_names = [f'feature_{i}' for i in range(training_features)]
+                                training_feature_names = [f'feature_{i}' for i in range(st.session_state.classifier.X_train.shape[1])]
                             
                             # Handle categorical variables in prediction data
                             for col in pred_data.select_dtypes(include=['object']).columns:
@@ -810,6 +802,14 @@ elif page == "Prediction":
                             
                             # Align columns with training data
                             pred_data = pred_data[training_feature_names]
+                            
+                            # Now validate feature count
+                            training_features = st.session_state.classifier.X_train.shape[1]
+                            prediction_features = pred_data.shape[1]
+                            
+                            if prediction_features != training_features:
+                                st.error(f"Feature mismatch after alignment! Training has {training_features} features, prediction has {prediction_features} features.")
+                                st.stop()
                             
                             # Make predictions
                             predictions, probabilities = st.session_state.classifier.predict_new_data(selected_model, pred_data)
