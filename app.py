@@ -468,11 +468,11 @@ elif page == "Model Training":
                     if st.button(f"Train {selected_individual_model}", type="primary"):
                         with st.spinner(f"Training {selected_individual_model}..."):
                             # Initialize classifier
-                            if 'classifier' not in st.session_state:
-                                st.session_state.classifier = SimpleMLClassifier()
+                            classifier = SimpleMLClassifier()
+                            st.session_state.classifier = classifier
                             
                             # Load and preprocess data
-                            instances, features = st.session_state.classifier.load_and_preprocess_data(df, target_column)
+                            instances, features = classifier.load_and_preprocess_data(df, target_column)
                             st.session_state.dataset_info = {
                                 'instances': instances,
                                 'features': features,
@@ -480,16 +480,16 @@ elif page == "Model Training":
                             }
                             
                             # Train single model
-                            model = st.session_state.classifier.models[selected_individual_model]
+                            model = classifier.models[selected_individual_model]
                             
                             # Use scaled data for models that benefit from it
                             if selected_individual_model in ['Logistic Regression', 'K-Nearest Neighbor']:
-                                X_train, X_test = st.session_state.classifier.X_train_scaled, st.session_state.classifier.X_test_scaled
+                                X_train, X_test = classifier.X_train_scaled, classifier.X_test_scaled
                             else:
-                                X_train, X_test = st.session_state.classifier.X_train, st.session_state.classifier.X_test
+                                X_train, X_test = classifier.X_train, classifier.X_test
                             
                             # Train model
-                            model.fit(X_train, st.session_state.classifier.y_train_encoded)
+                            model.fit(X_train, classifier.y_train_encoded)
                             
                             # Make predictions
                             y_pred = model.predict(X_test)
@@ -501,8 +501,8 @@ elif page == "Model Training":
                                 y_pred_proba = None
                             
                             # Calculate metrics
-                            metrics = st.session_state.classifier.calculate_metrics(
-                                st.session_state.classifier.y_test_encoded, y_pred, y_pred_proba
+                            metrics = classifier.calculate_metrics(
+                                classifier.y_test_encoded, y_pred, y_pred_proba
                             )
                             
                             # Store results
@@ -511,14 +511,14 @@ elif page == "Model Training":
                                     'model': model,
                                     'metrics': metrics,
                                     'predictions': y_pred,
-                                    'confusion_matrix': confusion_matrix(st.session_state.classifier.y_test_encoded, y_pred),
+                                    'confusion_matrix': confusion_matrix(classifier.y_test_encoded, y_pred),
                                     'classification_report': classification_report(
-                                        st.session_state.classifier.y_test_encoded, y_pred,
-                                        target_names=[str(cls) for cls in st.session_state.classifier.label_encoder.classes_]
+                                        classifier.y_test_encoded, y_pred,
+                                        target_names=[str(cls) for cls in classifier.label_encoder.classes_]
                                     )
                                 }
                             }
-                            st.session_state.classifier.results = st.session_state.results
+                            classifier.results = st.session_state.results
                             
                             st.success(f"{selected_individual_model} trained successfully!")
                             st.info("Go to Model Comparison page to see results.")
