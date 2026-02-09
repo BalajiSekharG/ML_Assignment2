@@ -350,18 +350,66 @@ if page == "Home":
     st.markdown("---")
     
     # Sample dataset option
-    if st.button("Load Sample Dataset", type="primary"):
-        with st.spinner("Loading sample dataset..."):
-            sample_df = load_sample_dataset()
-            st.session_state.sample_data = sample_df
-            st.success("Sample dataset loaded! Go to Model Training to proceed.")
+    col1, col2 = st.columns([1, 1])
+    
+    with col1:
+        if st.button("Load Sample Dataset", type="primary"):
+            with st.spinner("Loading sample dataset..."):
+                sample_df = load_sample_dataset()
+                st.session_state.sample_data = sample_df
+                st.success("Sample dataset loaded! Go to Model Training to proceed.")
+                
+                # Display sample data info
+                st.subheader("Sample Dataset Preview:")
+                st.dataframe(sample_df.head())
+                st.write(f"Dataset Shape: {sample_df.shape}")
+                st.write(f"Target Distribution:")
+                st.write(sample_df['target'].value_counts())
+    
+    with col2:
+        st.subheader("📥 Download Test Data")
+        st.markdown("""
+        Download sample datasets for testing the application:
+        """)
+        
+        # Generate and provide download links for different test datasets
+        if st.button("Generate Training Dataset", help="Download a sample training dataset"):
+            training_data = load_sample_dataset()
+            csv = training_data.to_csv(index=False)
+            st.download_button(
+                label="Download Training Dataset (CSV)",
+                data=csv,
+                file_name='sample_training_data.csv',
+                mime='text/csv',
+                help="Sample dataset with 1000 instances and 15 features"
+            )
+        
+        if st.button("Generate Test Dataset", help="Download a sample test dataset"):
+            # Generate a smaller test dataset
+            from sklearn.datasets import make_classification
+            X_test, y_test = make_classification(n_samples=200, n_features=15, n_informative=10, 
+                                               n_redundant=5, n_classes=3, random_state=123)
             
-            # Display sample data info
-            st.subheader("Sample Dataset Preview:")
-            st.dataframe(sample_df.head())
-            st.write(f"Dataset Shape: {sample_df.shape}")
-            st.write(f"Target Distribution:")
-            st.write(sample_df['target'].value_counts())
+            feature_names = [f'feature_{i+1}' for i in range(X_test.shape[1])]
+            test_df = pd.DataFrame(X_test, columns=feature_names)
+            test_df['target'] = y_test
+            
+            csv = test_df.to_csv(index=False)
+            st.download_button(
+                label="Download Test Dataset (CSV)",
+                data=csv,
+                file_name='sample_test_data.csv',
+                mime='text/csv',
+                help="Sample test dataset with 200 instances for prediction"
+            )
+        
+        st.markdown("""
+        ### 📋 Dataset Information:
+        - **Training Data**: 1000 instances, 15 features, 3 classes
+        - **Test Data**: 200 instances, 15 features (no target needed for prediction)
+        - **Format**: CSV files ready for upload
+        - **Usage**: Use training data for model training, test data for predictions
+        """)
 
 elif page == "Model Training":
     st.header("Model Training")
