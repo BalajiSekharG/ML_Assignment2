@@ -167,12 +167,22 @@ class SimpleMLClassifier:
             'MCC': matthews_corrcoef(y_true, y_pred)
         }
         
-        # Calculate AUC score
+        # Calculate AUC score with proper error handling
         if y_pred_proba is not None:
-            if len(np.unique(y_true)) == 2:  # Binary classification
-                metrics['AUC'] = roc_auc_score(y_true, y_pred_proba[:, 1])
-            else:  # Multi-class classification
-                metrics['AUC'] = roc_auc_score(y_true, y_pred_proba, multi_class='ovr', average='weighted')
+            try:
+                unique_classes = len(np.unique(y_true))
+                if unique_classes == 2:  # Binary classification
+                    metrics['AUC'] = roc_auc_score(y_true, y_pred_proba[:, 1])
+                else:  # Multi-class classification
+                    # Check if probability matrix shape matches classes
+                    if y_pred_proba.shape[1] == unique_classes:
+                        metrics['AUC'] = roc_auc_score(y_true, y_pred_proba, multi_class='ovr', average='weighted')
+                    else:
+                        st.warning(f"AUC calculation skipped: Probability shape {y_pred_proba.shape} doesn't match number of classes {unique_classes}")
+                        metrics['AUC'] = 0.0
+            except Exception as e:
+                st.warning(f"AUC calculation failed: {str(e)}")
+                metrics['AUC'] = 0.0
         else:
             metrics['AUC'] = 0.0
             
