@@ -442,7 +442,79 @@ elif page == "Model Training":
                 if df.shape[1] < 13:  # target column + 12 features
                     st.warning(f"Dataset has only {df.shape[1]-1} features (minimum 12 required)")
                 
-                if st.button("Train All Models", type="primary"):
+                # Training options
+                training_mode = st.radio(
+                    "Training Mode:",
+                    ["Train All Models", "Train Individual Model"],
+                    help="Choose to train all models at once or select individual models"
+                )
+                
+                if training_mode == "Train Individual Model":
+                    # Individual model selection
+                    available_models = ['Logistic Regression', 'Decision Tree', 'K-Nearest Neighbor', 
+                                   'Naive Bayes', 'Random Forest', 'XGBoost']
+                    selected_individual_model = st.selectbox("Select model to train:", available_models)
+                    
+                    if st.button(f"Train {selected_individual_model}", type="primary"):
+                        with st.spinner(f"Training {selected_individual_model}..."):
+                            # Initialize classifier
+                            if 'classifier' not in st.session_state:
+                                st.session_state.classifier = SimpleMLClassifier()
+                            
+                            # Load and preprocess data
+                            instances, features = st.session_state.classifier.load_and_preprocess_data(df, target_column)
+                            st.session_state.dataset_info = {
+                                'instances': instances,
+                                'features': features,
+                                'target_column': target_column
+                            }
+                            
+                            # Train single model
+                            model = st.session_state.classifier.models[selected_individual_model]
+                            
+                            # Use scaled data for models that benefit from it
+                            if selected_individual_model in ['Logistic Regression', 'K-Nearest Neighbor']:
+                                X_train, X_test = st.session_state.classifier.X_train_scaled, st.session_state.classifier.X_test_scaled
+                            else:
+                                X_train, X_test = st.session_state.classifier.X_train, st.session_state.classifier.X_test
+                            
+                            # Train model
+                            model.fit(X_train, st.session_state.classifier.y_train_encoded)
+                            
+                            # Make predictions
+                            y_pred = model.predict(X_test)
+                            
+                            # Get prediction probabilities for AUC
+                            if hasattr(model, 'predict_proba'):
+                                y_pred_proba = model.predict_proba(X_test)
+                            else:
+                                y_pred_proba = None
+                            
+                            # Calculate metrics
+                            metrics = st.session_state.classifier.calculate_metrics(
+                                st.session_state.classifier.y_test_encoded, y_pred, y_pred_proba
+                            )
+                            
+                            # Store results
+                            st.session_state.results = {
+                                selected_individual_model: {
+                                    'model': model,
+                                    'metrics': metrics,
+                                    'predictions': y_pred,
+                                    'confusion_matrix': confusion_matrix(st.session_state.classifier.y_test_encoded, y_pred),
+                                    'classification_report': classification_report(
+                                        st.session_state.classifier.y_test_encoded, y_pred,
+                                        target_names=[str(cls) for cls in st.session_state.classifier.label_encoder.classes_]
+                                    )
+                                }
+                            }
+                            st.session_state.classifier.results = st.session_state.results
+                            
+                            st.success(f"{selected_individual_model} trained successfully!")
+                            st.info("Go to Model Comparison page to see results.")
+                
+                else:  # Train All Models
+                    if st.button("Train All Models", type="primary"):
                     with st.spinner("Training all models... This may take a few minutes..."):
                         # Initialize classifier
                         classifier = SimpleMLClassifier()
