@@ -714,7 +714,37 @@ elif page == "Prediction":
         
         # Data upload for prediction
         st.subheader("Upload data for prediction:")
-        prediction_file = st.file_uploader("Upload CSV file for prediction", type=['csv'], key='prediction')
+        
+        # Add download option for test dataset
+        col1, col2 = st.columns([1, 1])
+        
+        with col1:
+            prediction_file = st.file_uploader("Upload CSV file for prediction", type=['csv'], key='prediction')
+        
+        with col2:
+            st.subheader("📥 Download Test Dataset")
+            st.markdown("""
+            Download a sample test dataset for predictions:
+            """)
+            
+            if st.button("Generate Test Dataset for Prediction", help="Download a sample test dataset"):
+                # Generate a smaller test dataset
+                from sklearn.datasets import make_classification
+                X_test, y_test = make_classification(n_samples=200, n_features=15, n_informative=10, 
+                                                   n_redundant=5, n_classes=3, random_state=123)
+                
+                feature_names = [f'feature_{i+1}' for i in range(X_test.shape[1])]
+                test_df = pd.DataFrame(X_test, columns=feature_names)
+                test_df['target'] = y_test
+                
+                csv = test_df.to_csv(index=False)
+                st.download_button(
+                    label="Download Test Dataset (CSV)",
+                    data=csv,
+                    file_name='sample_test_data.csv',
+                    mime='text/csv',
+                    help="Sample test dataset with 200 instances for prediction"
+                )
         
         if prediction_file is not None:
             try:
