@@ -305,7 +305,11 @@ class SimpleMLClassifier:
             probabilities = model.predict_proba(new_data) if hasattr(model, 'predict_proba') else None
         
         # Convert predictions back to original labels
-        original_predictions = self.label_encoder.inverse_transform(predictions)
+        if hasattr(self.label_encoder, 'classes_'):
+            original_predictions = self.label_encoder.inverse_transform(predictions)
+        else:
+            # If label encoder is not fitted, return encoded predictions
+            original_predictions = predictions
         
         return original_predictions, probabilities
 
