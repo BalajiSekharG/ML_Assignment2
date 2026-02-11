@@ -312,11 +312,13 @@ class SimpleMLClassifier:
 def load_sample_dataset():
     """Load a sample dataset for demonstration"""
     from sklearn.datasets import make_classification
-    X, y = make_classification(n_samples=1000, n_features=15, n_informative=10, 
-                               n_redundant=5, n_classes=3, random_state=42)
+    X, y = make_classification(n_samples=1000, n_features=12, n_informative=8, 
+                               n_redundant=4, n_classes=3, random_state=42)
     
-    # Create feature names
-    feature_names = [f'feature_{i+1}' for i in range(X.shape[1])]
+    # Use wine dataset feature names
+    feature_names = ['fixed acidity', 'volatile acidity', 'citric acid', 'residual sugar', 
+                   'chlorides', 'free sulfur dioxide', 'total sulfur dioxide', 'density', 
+                   'pH', 'sulphates', 'alcohol', 'quality']
     
     # Create DataFrame
     df = pd.DataFrame(X, columns=feature_names)
@@ -428,7 +430,28 @@ elif page == "Model Training":
     col1, col2 = st.columns([2, 1])
     
     with col1:
-        uploaded_file = st.file_uploader("Upload your CSV file", type=['csv'])
+        # Add download option for training dataset
+        upload_col1, upload_col2 = st.columns([1, 1])
+        
+        with upload_col1:
+            uploaded_file = st.file_uploader("Upload your CSV file", type=['csv'])
+        
+        with upload_col2:
+            st.subheader("📥 Download Training Dataset")
+            st.markdown("""
+            Download a sample training dataset:
+            """)
+            
+            if st.button("Generate Training Dataset", help="Download a sample training dataset"):
+                training_data = load_sample_dataset()
+                csv = training_data.to_csv(index=False)
+                st.download_button(
+                    label="Download Training Dataset (CSV)",
+                    data=csv,
+                    file_name='sample_training_data.csv',
+                    mime='text/csv',
+                    help="Sample dataset with 1000 instances and 15 features"
+                )
         
         if uploaded_file is not None:
             try:
@@ -728,12 +751,15 @@ elif page == "Prediction":
             """)
             
             if st.button("Generate Test Dataset for Prediction", help="Download a sample test dataset"):
-                # Generate a smaller test dataset
+                # Generate test data with wine feature names
                 from sklearn.datasets import make_classification
-                X_test, y_test = make_classification(n_samples=200, n_features=15, n_informative=10, 
-                                                   n_redundant=5, n_classes=3, random_state=123)
+                X_test, y_test = make_classification(n_samples=200, n_features=12, n_informative=8, 
+                                                   n_redundant=4, n_classes=3, random_state=123)
                 
-                feature_names = [f'feature_{i+1}' for i in range(X_test.shape[1])]
+                # Use wine dataset feature names
+                feature_names = ['fixed acidity', 'volatile acidity', 'citric acid', 'residual sugar', 
+                               'chlorides', 'free sulfur dioxide', 'total sulfur dioxide', 'density', 
+                               'pH', 'sulphates', 'alcohol', 'quality']
                 test_df = pd.DataFrame(X_test, columns=feature_names)
                 test_df['target'] = y_test
                 
